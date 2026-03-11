@@ -2,85 +2,104 @@
 
 Bare-metal Kubernetes homelab infrastructure managed via GitHub App automation.
 
-## Cluster
+## Architecture
 
-| Node | Role | IP | OS | K8s Version |
-|------|------|----|----|-------------|
-| control-01 | control-plane | 192.168.1.202 | Ubuntu 24.04.4 LTS | v1.32.13 |
+```
+┌──────────────┐
+│ control-01   │  192.168.1.202
+│ CP + etcd    │  Ubuntu 24.04 / K8s v1.32.13
+└──────┬───────┘
+       │  (workers planned)
+┌──────┴───────┐  ┌──────────────┐
+│ worker-01    │  │ worker-02    │
+│ (planned)    │  │ (planned)    │
+└──────────────┘  └──────────────┘
+```
 
-| Component | Version |
-|-----------|---------|
-| containerd | 1.7.28 |
-| Calico CNI | v3.29.3 |
-| Pod CIDR | 192.168.0.0/16 |
-| Service CIDR | 10.96.0.0/12 |
+| Component | Version | Status |
+|-----------|---------|--------|
+| Kubernetes | v1.32.13 | Deployed |
+| containerd | 1.7.28 | Deployed |
+| Calico CNI | v3.29.3 | Deployed |
+| MetalLB | - | Planned |
+| ingress-nginx | - | Planned |
 
-## Quick Start
+| Network | CIDR |
+|---------|------|
+| Pod | 192.168.0.0/16 |
+| Service | 10.96.0.0/12 |
+| LAN | 192.168.1.0/24 |
+
+## Bootstrap
 
 ```bash
-# 1. Set up environment
-cp .env.example .env
+# 1. Prepare OS (on each node)
+sudo bash bootstrap/scripts/k8s-node-bootstrap.sh
 
-# 2. Verify GitHub App auth
-bash scripts/github-auth-check.sh
+# 2. Init control plane (first node only)
+sudo kubeadm init --config cluster/kubeadm/kubeadm-config.yaml
 
-# 3. Configure git with App token
-bash scripts/git-use-app-token.sh
+# 3. Configure kubectl
+mkdir -p $HOME/.kube
+sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# 4. Install CNI
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.3/manifests/calico.yaml
+
+# 5. Join workers
+sudo kubeadm join 192.168.1.202:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
 ```
 
-## Project Structure
+See [docs/runbooks/bootstrap.md](docs/runbooks/bootstrap.md) for full runbook.
+
+## Repository Structure
 
 ```
-├── scripts/
-│   ├── k8s-node-bootstrap.sh     # OS prep for k8s nodes (idempotent)
-│   ├── github-app-token.py       # Generate GitHub App access token
-│   ├── export-github-token.sh    # Export GITHUB_TOKEN to shell
-│   ├── git-use-app-token.sh      # Set git remote with App token
-│   └── github-auth-check.sh      # End-to-end auth verification
-├── docs/
-│   ├── control-plane-init-summary.md
-│   ├── github-app-setup.md
-│   └── claude-workflow.md
-├── bootstrap/                     # Local only (gitignored)
-├── CLAUDE.md                      # Claude Code project instructions
-└── .env.example                   # Environment template
+bootstrap/          Node bootstrap scripts and OS prep
+  scripts/          k8s-node-bootstrap.sh, GitHub App auth scripts
+cluster/            Kubernetes cluster configuration
+  kubeadm/          kubeadm-config.yaml
+platform/           Infrastructure add-ons (CNI, LB, ingress)
+  calico/           Calico CNI
+apps/               Application deployments
+docs/               Documentation
+  runbooks/         Operational runbooks
+  architecture.md   Cluster architecture
+  network.md        Network design
+.github/            CI workflows (yamllint, shellcheck)
 ```
 
-## Node Bootstrap
+## GitOps Plan
 
-Prepare a fresh Ubuntu 24.04 machine as a Kubernetes node:
+| Phase | Component | Approach |
+|-------|-----------|----------|
+| Current | Manual kubectl + kubeadm | Bootstrap phase |
+| Next | Flux / ArgoCD | Declarative cluster management |
+| Target | Full GitOps | All config in repo, auto-sync to cluster |
 
-```bash
-sudo bash scripts/k8s-node-bootstrap.sh
-```
-
-This script is idempotent and handles:
-- Disable swap
-- Kernel modules (overlay, br_netfilter)
-- Sysctl (ip_forward, bridge-nf-call)
-- Install containerd (SystemdCgroup=true)
-- Install kubelet, kubeadm, kubectl
-- Version hold
+**Goal**: Every change to the cluster flows through a PR in this repository.
 
 ## GitHub App Auth
 
-Authentication uses the `ben-ai-ops-k8s` GitHub App instead of personal tokens.
-
 ```bash
-# Get a fresh token
-source scripts/export-github-token.sh
+# Setup
+cp .env.example .env
+bash bootstrap/scripts/github-auth-check.sh
 
-# Or configure git directly
-bash scripts/git-use-app-token.sh
+# Configure git
+bash bootstrap/scripts/git-use-app-token.sh
 ```
 
-See [docs/github-app-setup.md](docs/github-app-setup.md) for details.
+## CI
 
-## Roadmap
+- **YAML lint**: Validates all YAML files
+- **ShellCheck**: Static analysis on shell scripts
 
-- [ ] Add worker nodes
-- [ ] MetalLB (load balancer)
-- [ ] ingress-nginx
-- [ ] NFS storage provisioner
-- [ ] Helm
-- [ ] Monitoring (Prometheus/Grafana)
+## Docs
+
+- [Architecture](docs/architecture.md)
+- [Network](docs/network.md)
+- [Bootstrap Runbook](docs/runbooks/bootstrap.md)
+- [GitHub App Setup](docs/github-app-setup.md)
+- [Claude Workflow](docs/claude-workflow.md)

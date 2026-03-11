@@ -59,8 +59,8 @@ def load_dotenv(path: str) -> None:
 
 def get_config() -> tuple[str, str, str]:
     """Return (app_id, installation_id, pem_path) or exit with error."""
-    # Try loading .env from project root (one level up from scripts/)
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # Try loading .env from project root (two levels up from bootstrap/scripts/)
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     load_dotenv(os.path.join(project_root, ".env"))
 
     app_id = os.environ.get("GITHUB_APP_ID", "")
