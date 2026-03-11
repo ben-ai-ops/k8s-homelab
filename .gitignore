@@ -4,7 +4,8 @@
 .env
 *.pem
 .github-apps/
-bootstrap/
+bootstrap/kubeadm-init-output.txt
+bootstrap/worker-join-command.sh
 
 # ──────────────────────────────────────────────────────────────
 # OS / Editor

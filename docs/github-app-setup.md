@@ -46,7 +46,7 @@
 |------|------|----------|
 | Private key | `.github-apps/ben-ai-ops-k8s.2026-03-11.private-key.pem` | NO (.gitignored) |
 | Environment | `.env` | NO (.gitignored) |
-| Token script | `scripts/github-app-token.py` | Yes |
+| Token script | `bootstrap/scripts/github-app-token.py` | Yes |
 
 ## Key Rotation
 
@@ -56,7 +56,7 @@ When you rotate the App's private key:
 2. Place in `.github-apps/` with the new date in filename
 3. Update `GITHUB_APP_PEM_FILE` in `.env`
 4. Delete the old PEM file
-5. Run `bash scripts/github-auth-check.sh` to verify
+5. Run `bash bootstrap/scripts/github-auth-check.sh` to verify
 
 ## Troubleshooting
 

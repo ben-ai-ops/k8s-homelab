@@ -4,7 +4,7 @@
 
 1. Clone the repo (if not already):
    ```bash
-   bash scripts/git-use-app-token.sh  # sets up token first
+   bash bootstrap/scripts/git-use-app-token.sh  # sets up token first
    git clone https://github.com/ben-ai-ops/k8s-homelab.git
    ```
 
@@ -16,7 +16,7 @@
 
 3. Verify auth:
    ```bash
-   bash scripts/github-auth-check.sh
+   bash bootstrap/scripts/github-auth-check.sh
    ```
 
 ## Daily Workflow
@@ -27,7 +27,7 @@
 cd ~/k8s-homelab
 
 # Authenticate git with the App
-bash scripts/git-use-app-token.sh
+bash bootstrap/scripts/git-use-app-token.sh
 
 # Launch Claude Code
 claude
@@ -42,13 +42,13 @@ git pull origin main
 
 **Push changes (after Claude creates a commit):**
 ```bash
-bash scripts/git-use-app-token.sh   # refresh token if >1hr
+bash bootstrap/scripts/git-use-app-token.sh   # refresh token if >1hr
 git push origin main
 ```
 
 **Create a PR:**
 ```bash
-source scripts/export-github-token.sh
+source bootstrap/scripts/export-github-token.sh
 # Use GITHUB_TOKEN with gh CLI or API calls
 ```
 
@@ -56,7 +56,7 @@ source scripts/export-github-token.sh
 
 Tokens expire after 1 hour. If you get a 401 error:
 ```bash
-bash scripts/git-use-app-token.sh
+bash bootstrap/scripts/git-use-app-token.sh
 ```
 
 ## Safety Rules
@@ -87,5 +87,5 @@ github-app-token.py           ← generates access token
 
 If you prefer SSH over HTTPS App token:
 ```bash
-bash scripts/git-use-app-token.sh --remove
+bash bootstrap/scripts/git-use-app-token.sh --remove
 ```
