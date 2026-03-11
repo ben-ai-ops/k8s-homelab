@@ -1,0 +1,23 @@
+---
+all:
+  vars:
+    ansible_user: ben
+    ansible_become: true
+    kube_version: "1.32"
+    pod_cidr: "192.168.0.0/16"
+    service_cidr: "10.96.0.0/12"
+    calico_version: "v3.29.3"
+
+  children:
+    control_plane:
+      hosts:
+        control-01:
+          ansible_host: 192.168.1.202
+          kubeadm_role: init
+
+    workers:
+      hosts: {}
+      # worker-01:
+      #   ansible_host: 192.168.1.203
+      # worker-02:
+      #   ansible_host: 192.168.1.204
